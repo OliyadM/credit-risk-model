@@ -1,0 +1,41 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*.so
+*.ipynb_checkpoints
+
+# Virtual environment
+venv/
+.env/
+
+# Data
+data/raw/
+data/processed/
+
+# Model artifacts
+models/
+*.pkl
+*.joblib
+*.h5
+
+# MLflow
+mlruns/
+
+# Jupyter Notebook metadata
+.ipynb_checkpoints
+
+# VSCode
+.vscode/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Docker
+*.container
+*.pid
+
+# Py

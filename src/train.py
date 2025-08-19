@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
-
+import joblib
 # Load processed data
 df = pd.read_csv("data/processed/processed_data.csv")
 
@@ -81,3 +81,4 @@ else:
     print("Best model: Random Forest")
 
 print("Training completed.")
+joblib.dump(best_rf, "models/random_forest_best.pkl")

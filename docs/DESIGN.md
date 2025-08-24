@@ -46,13 +46,15 @@ v1 keeps a proxy, because there is still no default flag. It changes what the mo
 
 **Label.** On the training cohort only, build:
 
-- `Recency`: days between the cohort snapshot and the customer's last transaction
-- `FrequencyRate`: transaction count divided by tenure in days (tenure at least 1 day)
-- `MonetaryRate`: `sum(Value)` divided by the same tenure
+- `RecencyFraction`: days since the last transaction, divided by the length of that customer's observed window. Absolute days are not used. A later cohort's whole life can be shorter than the fit cohort's quiet period, so an absolute cutoff would make "high recency" a state the later cohort cannot reach.
+- `LogFrequencyRate`: `log1p` of transaction count divided by tenure in days (tenure at least 1 day)
+- `LogMonetaryRate`: `log1p` of `sum(Value)` divided by the same tenure
 
-Rates, not totals, so a customer observed for three weeks is not automatically "low frequency" compared with a customer observed for two months. Standardize those three columns, fit KMeans, and score each **scaled** center as `z_recency - z_frequency - z_monetary`. The high-risk cluster is the center with the largest score. That id is stored. Validation and test customers are labeled with the stored scaler, the stored KMeans, and the stored id. The definition is not recomputed on the batch.
+Rates, not totals, so a customer observed for three weeks is not automatically "low frequency" compared with a customer observed for two months. The log is there because monetary rate runs from tens of UGX per day to millions; a raw z-score spends its scale on a handful of merchants. Standardize those three columns, fit KMeans, and score each **scaled** center as `z_recency - z_frequency - z_monetary`. The high-risk cluster is the center with the largest score. That id is stored. Validation and test customers are labeled with the stored scaler, the stored KMeans, and the stored id. The definition is not recomputed on the batch.
 
-**Features.** Composition and timing shape only: debit share, local-time night and weekend share, hour dispersion, gap regularity (`interval_cv`), product and channel diversity, ticket-size dispersion (`value_cv`), and share of category, channel, provider, and pricing level. The vocabulary of levels is learned on the fit cohort. Customers with fewer than 3 transactions in their window are not scored. The tenure is too short for the proxy to mean anything.
+**Features.** Composition and timing shape only: debit share, local-time night and weekend share, hour dispersion, gap regularity (`interval_cv`), entropy of the product, category, channel, and provider mix, ticket-size dispersion (`value_cv`), and share of category, channel, provider, and pricing level. The vocabulary of levels is learned on the fit cohort. Customers with fewer than 3 transactions in their window are not scored. The tenure is too short for the proxy to mean anything.
+
+Entropy is used instead of unique-count divided by transactions. That ratio moves almost one-for-one with the inverse of the transaction count, which is the numerator of the frequency rate, so it would put the label back into the matrix. Entropy depends on the proportions only.
 
 Explicitly excluded, because they are the label or a deterministic rewrite of it: recency, frequency, monetary, both rates, transaction count, value or amount sum and mean, tenure, mean inter-transaction gap, and `FraudResult`. `FraudResult` is a different event (193 of 95,662 transactions in the public training file, about 0.2 percent). It is not a default, and using it as an input would mix a rare fraud flag into a credit proxy. Country and currency are constants (256, UGX) and are dropped.
 

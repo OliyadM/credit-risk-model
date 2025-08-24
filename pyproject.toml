@@ -1,0 +1,21 @@
+[project]
+name = "credit-risk-model"
+version = "1.0.0"
+description = "Proxy credit-risk score from Xente eCommerce transactions"
+requires-python = ">=3.11"
+readme = "README.md"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["api", "credit_risk", "tests"]

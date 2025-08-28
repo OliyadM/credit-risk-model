@@ -1,0 +1,36 @@
+# Reproducible training run. Change this file, not the source, to rerun.
+
+seed: 42
+
+paths:
+  raw: data/raw/data.csv
+  artifact: models/credit_risk_model.joblib
+  reports: reports
+
+split:
+  val_fraction: 0.2
+  test_fraction: 0.2
+
+target:
+  n_clusters: 3
+  min_transactions: 3
+
+features:
+  min_level_share: 0.01
+  timezone_offset_hours: 3
+
+models:
+  woe_bins: 5
+  lr_C: [0.1, 1.0, 10.0]
+  rf_max_depth: [6, 12]
+  rf_min_samples_leaf: [5, 20]
+  rf_n_estimators: 200
+  rf_n_jobs: -1
+  prefer_logistic_margin: 0.01
+
+cost:
+  false_positive: 1.0
+  false_negative: 5.0
+
+evaluation:
+  permutation_repeats: 5

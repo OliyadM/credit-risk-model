@@ -1,94 +1,147 @@
-# src/api/main.py
+"""Score a feature row with the trained artifact, or do not start.
+
+An untrained estimator is not a fallback. If the artifact is missing or
+incomplete the process raises during startup, before it listens. The
+previous service constructed a fresh random forest in that case and
+returned HTTP 200 with a sentinel score.
+"""
+
+from __future__ import annotations
+
 import logging
-from fastapi import FastAPI
-from pydantic import BaseModel
-import pandas as pd
-import joblib
+import math
 import os
+from pathlib import Path
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("api.log"),
-        logging.StreamHandler()  # Also log to console
-    ]
+import joblib
+import pandas as pd
+from fastapi import FastAPI, HTTPException
+
+from api.schemas import (
+    FeatureSchemaResponse,
+    HealthResponse,
+    PredictRequest,
+    PredictResponse,
 )
-logger = logging.getLogger(__name__)
+from credit_risk.woe import WOEEncoder  # noqa: F401  (needed so joblib can unpickle)
 
-app = FastAPI()
+logger = logging.getLogger("credit_risk.api")
 
-# Load the best model
-model_path = "./models/random_forest_best.pkl"
-if os.path.exists(model_path):
-    try:
-        model = joblib.load(model_path)
-        logger.info(f"Successfully loaded model from {model_path}")
-    except Exception as e:
-        logger.error(f"Failed to load model from {model_path}: {str(e)}")
-        model = None
-else:
-    from sklearn.ensemble import RandomForestClassifier
-    model = RandomForestClassifier(max_depth=20, min_samples_split=5, n_estimators=100, random_state=42)
-    logger.warning("Model file not found, using default Random Forest. Train and save it first.")
+REQUIRED_KEYS = {
+    "pipeline",
+    "feature_columns",
+    "threshold",
+    "model_name",
+    "model_version",
+}
 
-# Pydantic model for input validation
-class CustomerData(BaseModel):
-    Amount_sum: float
-    Amount_mean: float
-    Amount_std: float
-    Amount_min: float
-    Amount_max: float
-    Value_sum: float
-    Value_mean: float
-    Value_std: float
-    Value_min: float
-    Value_max: float
-    Hour_mean: float
-    Hour_std: float
-    Day_mean: float
-    Day_std: float
-    Month_mean: float
-    Month_std: float
-    WeekDay_mean: float
-    WeekDay_std: float
-    DayOfYear_mean: float
-    DayOfYear_std: float
-    ProviderId_ProviderId_1: int
-    ProviderId_ProviderId_4: int
-    ProviderId_ProviderId_5: int
-    ProviderId_ProviderId_6: int
-    ProductId_ProductId_10: int
-    ProductId_ProductId_15: int
-    ProductId_ProductId_3: int
-    ProductId_ProductId_6: int
-    ProductCategory_airtime: int
-    ProductCategory_financial_services: int
-    ChannelId_ChannelId_2: int
-    ChannelId_ChannelId_3: int
-    PricingStrategy_2: int
-    PricingStrategy_4: int
-    Transaction_Count: int
 
-@app.post("/predict")
-async def predict_risk(customer_data: CustomerData):
-    logger.info("Received prediction request with data: %s", customer_data.dict())
-    if model is None:
-        logger.error("Model not available for prediction")
-        return {"error": "Model not loaded", "is_high_risk": -1, "risk_probability": -1.0}
-    
-    try:
-        data = pd.DataFrame([customer_data.dict().values()], columns=customer_data.dict().keys())
-        prediction = model.predict(data)
-        probability = model.predict_proba(data)[:, 1][0]
-        logger.info("Prediction successful: is_high_risk=%d, probability=%.3f", prediction[0], probability)
-        return {"is_high_risk": int(prediction[0]), "risk_probability": float(probability)}
-    except Exception as e:
-        logger.error("Prediction failed: %s", str(e))
-        return {"error": str(e), "is_high_risk": -1, "risk_probability": -1.0}
+def load_bundle(path: str | Path) -> dict:
+    """Load the only model this service is willing to serve."""
+    artifact = Path(path)
+    if not artifact.is_file():
+        raise FileNotFoundError(
+            f"Trained model artifact is missing at {artifact}. "
+            "Refusing to start with an untrained model. "
+            "Run `python -m credit_risk.train --config configs/config.yaml` first."
+        )
+    bundle = joblib.load(artifact)
+    if not isinstance(bundle, dict):
+        raise ValueError(f"Artifact at {artifact} is not a model bundle")
+    missing = REQUIRED_KEYS - set(bundle)
+    if missing:
+        raise ValueError(f"Artifact at {artifact} is missing keys: {sorted(missing)}")
+    return bundle
+
+
+def create_app(model_path: str | Path | None = None) -> FastAPI:
+    """Build the app. Raises if the artifact cannot be loaded."""
+    path = Path(
+        model_path
+        if model_path is not None
+        else os.environ.get("MODEL_PATH", "models/credit_risk_model.joblib")
+    )
+    bundle = load_bundle(path)
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    logger.info(
+        "Loaded %s %s from %s", bundle["model_name"], bundle["model_version"], path
+    )
+    app = FastAPI(
+        title="Credit risk score",
+        version=str(bundle["model_version"]),
+        description=(
+            "Scores a customer-level behavioral feature vector against an "
+            "RFM proxy segment. The score is not a probability of default."
+        ),
+    )
+    app.state.bundle = bundle
+
+    @app.get("/health", response_model=HealthResponse)
+    def health() -> HealthResponse:
+        return HealthResponse(
+            status="ok",
+            model_name=bundle["model_name"],
+            model_version=bundle["model_version"],
+            n_features=len(bundle["feature_columns"]),
+        )
+
+    @app.get("/features", response_model=FeatureSchemaResponse)
+    def features() -> FeatureSchemaResponse:
+        # The client should not have to guess the column set of this artifact.
+        return FeatureSchemaResponse(
+            model_name=bundle["model_name"],
+            model_version=bundle["model_version"],
+            threshold=float(bundle["threshold"]),
+            feature_columns=list(bundle["feature_columns"]),
+        )
+
+    @app.post("/predict", response_model=PredictResponse)
+    def predict(body: PredictRequest) -> PredictResponse:
+        frame = _frame_from_features(body.features, bundle["feature_columns"])
+        probability = float(_positive_proba(bundle["pipeline"], frame)[0])
+        if not 0.0 <= probability <= 1.0:
+            raise HTTPException(status_code=500, detail="Model returned a score outside [0, 1]")
+        threshold = float(bundle["threshold"])
+        logger.info(
+            "Scored customer_id=%s probability=%.4f", body.customer_id, probability
+        )
+        return PredictResponse(
+            customer_id=body.customer_id,
+            risk_probability=probability,
+            is_high_risk=int(probability >= threshold),
+            threshold=threshold,
+            model_name=bundle["model_name"],
+            model_version=bundle["model_version"],
+        )
+
+    return app
+
+
+def _frame_from_features(payload: dict[str, float], columns: list[str]) -> pd.DataFrame:
+    missing = [column for column in columns if column not in payload]
+    unexpected = [column for column in payload if column not in columns]
+    if missing or unexpected:
+        raise HTTPException(
+            status_code=422,
+            detail={"missing": missing, "unexpected": unexpected},
+        )
+    values = {}
+    for column in columns:
+        value = payload[column]
+        if not isinstance(value, (int, float)) or not math.isfinite(float(value)):
+            raise HTTPException(status_code=422, detail=f"{column} must be a finite number")
+        values[column] = float(value)
+    return pd.DataFrame([values], columns=columns)
+
+
+def _positive_proba(pipeline, features: pd.DataFrame):
+    classes = list(pipeline.named_steps["clf"].classes_)
+    if 1 not in classes:
+        raise HTTPException(status_code=500, detail="Loaded model has no positive class")
+    return pipeline.predict_proba(features)[:, classes.index(1)]
+
 
 if __name__ == "__main__":
-    logger.info("Starting FastAPI application on http://0.0.0.0:8000")
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+    uvicorn.run(create_app, factory=True, host="0.0.0.0", port=8000)

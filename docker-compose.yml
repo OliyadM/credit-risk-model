@@ -1,11 +1,8 @@
-# docker-compose.yml
-version: '3.8'
 services:
   api:
     build: .
     ports:
       - "8000:8000"
-    volumes:
-      - ./models:/app/models
     environment:
-      - PYTHONPATH=/app
+      MODEL_PATH: /app/models/credit_risk_model.joblib
+      PYTHONPATH: /app/src

@@ -1,42 +1,16 @@
-data
-# Byte-compiled / cache files
+# The Xente training file is public, but this repo does not redistribute it.
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
 __pycache__/
 *.py[cod]
-*.so
-*.ipynb_checkpoints
-
-# Virtual environment
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+.venv/
 venv/
-.env/
-
-# Data
-data/raw/
-data/processed/
-
-# Model artifacts
-models/
-*.pkl
-*.joblib
-*.h5
-
-# MLflow
-mlruns/
-
-# Jupyter Notebook metadata
-.ipynb_checkpoints
-
-# VSCode
-.vscode/
-
-# OS Files
-.DS_Store
-Thumbs.db
-
-# Logs
+.env
 *.log
-
-# Docker
-*.container
-*.pid
-
-# Py
+.DS_Store

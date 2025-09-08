@@ -1,0 +1,487 @@
+{
+  "caveat": "The label is a KMeans segment of recency fraction and log activity rates. It is not a loan default. Metrics measure whether other behavior tracks that segment on later customers. They are not a probability of default.",
+  "seed": 42,
+  "model_version": "d7f25e5ccf02",
+  "trained_at": "2026-11-19T20:35:29.546285+00:00",
+  "champion": "random_forest",
+  "data": {
+    "n_transactions": 95662,
+    "n_customers": 3742,
+    "time_min": "2018-11-15T02:18:49+00:00",
+    "time_max": "2019-02-13T10:01:28+00:00",
+    "val_start": "2019-01-01T22:04:20+00:00",
+    "test_start": "2019-01-23T09:32:57+00:00",
+    "min_transactions": 3,
+    "fit": {
+      "assigned": 2246,
+      "scored": 1654,
+      "positives": 347,
+      "prevalence": 0.2097944377267231
+    },
+    "validation": {
+      "assigned": 748,
+      "scored": 461,
+      "positives": 123,
+      "prevalence": 0.2668112798264642
+    },
+    "test": {
+      "assigned": 748,
+      "scored": 560,
+      "positives": 122,
+      "prevalence": 0.21785714285714286
+    }
+  },
+  "proxy": {
+    "n_clusters": 3,
+    "high_risk_cluster": 2,
+    "risk_scores": [
+      -1.2701061846759027,
+      0.26393996647123685,
+      1.3887070296553365
+    ],
+    "scaled_centers": [
+      [
+        0.8578771534367248,
+        1.049566315722351,
+        1.0784170223902767
+      ],
+      [
+        -0.9381845291448881,
+        -0.6776373593345114,
+        -0.5244871362816136
+      ],
+      [
+        0.7438902959103163,
+        -0.13052089972749836,
+        -0.514295834017522
+      ]
+    ],
+    "center_order": [
+      "RecencyFraction",
+      "LogFrequencyRate",
+      "LogMonetaryRate"
+    ]
+  },
+  "selection": {
+    "rule": "Highest validation ROC-AUC. Logistic regression is preferred when it is within 0.01 of the best score.",
+    "prefer_logistic_margin": 0.01,
+    "chosen_model": "random_forest",
+    "chosen_params": {
+      "max_depth": 12,
+      "min_samples_leaf": 5
+    },
+    "validation_roc_auc": {
+      "logistic_regression": 0.7665969115312455,
+      "random_forest": 0.8307836628662144
+    },
+    "grid": [
+      {
+        "model": "logistic_regression",
+        "params": {
+          "C": 0.1
+        },
+        "val_roc_auc": 0.7647207389233656,
+        "val_pr_auc": 0.5849191841287553
+      },
+      {
+        "model": "logistic_regression",
+        "params": {
+          "C": 1.0
+        },
+        "val_roc_auc": 0.7665969115312455,
+        "val_pr_auc": 0.5825289575645172
+      },
+      {
+        "model": "logistic_regression",
+        "params": {
+          "C": 10.0
+        },
+        "val_roc_auc": 0.7657069322172511,
+        "val_pr_auc": 0.57815265890619
+      },
+      {
+        "model": "random_forest",
+        "params": {
+          "max_depth": 6,
+          "min_samples_leaf": 5
+        },
+        "val_roc_auc": 0.8139702698802136,
+        "val_pr_auc": 0.6682609978982068
+      },
+      {
+        "model": "random_forest",
+        "params": {
+          "max_depth": 6,
+          "min_samples_leaf": 20
+        },
+        "val_roc_auc": 0.8122624717371434,
+        "val_pr_auc": 0.6587532611256596
+      },
+      {
+        "model": "random_forest",
+        "params": {
+          "max_depth": 12,
+          "min_samples_leaf": 5
+        },
+        "val_roc_auc": 0.8307836628662144,
+        "val_pr_auc": 0.685398851699276
+      },
+      {
+        "model": "random_forest",
+        "params": {
+          "max_depth": 12,
+          "min_samples_leaf": 20
+        },
+        "val_roc_auc": 0.8210179439072498,
+        "val_pr_auc": 0.6674071282923159
+      }
+    ]
+  },
+  "threshold": {
+    "champion": 0.3,
+    "fp_cost": 1.0,
+    "fn_cost": 5.0,
+    "chosen_on": "validation",
+    "validation_cost": 196.0,
+    "by_model": {
+      "logistic_regression": 0.39,
+      "random_forest": 0.3
+    }
+  },
+  "test": {
+    "logistic_regression": {
+      "n": 560,
+      "positives": 122,
+      "roc_auc": 0.6519200538962497,
+      "pr_auc": 0.479238772790025,
+      "ks": 0.30833146193577365,
+      "brier": 0.21837743897074371,
+      "precision": 0.29927007299270075,
+      "recall": 0.6721311475409836,
+      "threshold": 0.39,
+      "tp": 82,
+      "tn": 246,
+      "fp": 192,
+      "fn": 40,
+      "cost": 392.0
+    },
+    "random_forest": {
+      "n": 560,
+      "positives": 122,
+      "roc_auc": 0.7851822741223144,
+      "pr_auc": 0.5812080279583364,
+      "ks": 0.4325174039973052,
+      "brier": 0.14635461816181303,
+      "precision": 0.36401673640167365,
+      "recall": 0.7131147540983607,
+      "threshold": 0.3,
+      "tp": 87,
+      "tn": 286,
+      "fp": 152,
+      "fn": 35,
+      "cost": 327.0
+    },
+    "baseline": {
+      "n": 560,
+      "positives": 122,
+      "roc_auc": 0.5,
+      "pr_auc": 0.21785714285714286,
+      "ks": 0.0,
+      "brier": 0.17041446208112876,
+      "precision": 0.0,
+      "recall": 0.0,
+      "threshold": 0.5,
+      "tp": 0,
+      "tn": 438,
+      "fp": 0,
+      "fn": 122,
+      "cost": 610.0
+    },
+    "rfm_oracle_diagnostic": {
+      "n": 560,
+      "positives": 122,
+      "roc_auc": 0.9996444344636575,
+      "pr_auc": 0.9986307131066485,
+      "ks": 0.997716894977169,
+      "brier": 0.014141333734837915,
+      "precision": 0.991304347826087,
+      "recall": 0.9344262295081968,
+      "threshold": 0.5,
+      "tp": 114,
+      "tn": 437,
+      "fp": 1,
+      "fn": 8,
+      "cost": 41.0
+    },
+    "cost": {
+      "champion": 327.0,
+      "all_low_risk": 610.0,
+      "all_high_risk": 438.0
+    }
+  },
+  "information_value": [
+    {
+      "feature": "provider_share_providerid_6",
+      "iv": 0.5277506079119452
+    },
+    {
+      "feature": "category_entropy",
+      "iv": 0.4131907864970625
+    },
+    {
+      "feature": "cat_share_financial_services",
+      "iv": 0.34187186852487694
+    },
+    {
+      "feature": "product_entropy",
+      "iv": 0.33181901950403336
+    },
+    {
+      "feature": "interval_cv",
+      "iv": 0.3162301402895029
+    },
+    {
+      "feature": "cat_share_airtime",
+      "iv": 0.2679434335362454
+    },
+    {
+      "feature": "provider_entropy",
+      "iv": 0.26201312692462897
+    },
+    {
+      "feature": "value_cv",
+      "iv": 0.2415673806628254
+    },
+    {
+      "feature": "debit_share",
+      "iv": 0.22813046490191885
+    },
+    {
+      "feature": "channel_entropy",
+      "iv": 0.2139551194228696
+    },
+    {
+      "feature": "channel_share_channelid_2",
+      "iv": 0.2116508961223482
+    },
+    {
+      "feature": "provider_share_providerid_4",
+      "iv": 0.20604594454094383
+    },
+    {
+      "feature": "channel_share_channelid_3",
+      "iv": 0.2059787922805114
+    },
+    {
+      "feature": "night_share",
+      "iv": 0.18085931465859773
+    },
+    {
+      "feature": "provider_share_providerid_5",
+      "iv": 0.12781308251529605
+    },
+    {
+      "feature": "pricing_share_2",
+      "iv": 0.10953311433078204
+    },
+    {
+      "feature": "pricing_share_4",
+      "iv": 0.10672409586083684
+    },
+    {
+      "feature": "weekend_share",
+      "iv": 0.10539631247288433
+    },
+    {
+      "feature": "hour_std",
+      "iv": 0.055023040892607636
+    },
+    {
+      "feature": "provider_share_providerid_1",
+      "iv": 0.05121948075890244
+    },
+    {
+      "feature": "cat_share_utility_bill",
+      "iv": 0.0009487738666442251
+    },
+    {
+      "feature": "cat_share_data_bundles",
+      "iv": 0.0009487738666442251
+    },
+    {
+      "feature": "cat_share_tv",
+      "iv": 0.0009487738666442251
+    },
+    {
+      "feature": "cat_share_residual",
+      "iv": 0.0009487738666442251
+    },
+    {
+      "feature": "channel_share_residual",
+      "iv": 0.0009487738666442251
+    },
+    {
+      "feature": "provider_share_providerid_3",
+      "iv": 0.0009487738666442251
+    },
+    {
+      "feature": "provider_share_residual",
+      "iv": 0.0009487738666442251
+    },
+    {
+      "feature": "pricing_share_1",
+      "iv": 0.0009487738666442251
+    },
+    {
+      "feature": "pricing_share_residual",
+      "iv": 0.0009487738666442251
+    }
+  ],
+  "permutation_importance": [
+    {
+      "feature": "hour_std",
+      "mean": 0.10361179729021623,
+      "std": 0.00380351782563661
+    },
+    {
+      "feature": "value_cv",
+      "mean": 0.0275058013324349,
+      "std": 0.005950469257528054
+    },
+    {
+      "feature": "category_entropy",
+      "mean": 0.024107343364024182,
+      "std": 0.0053232942235650555
+    },
+    {
+      "feature": "pricing_share_2",
+      "mean": 0.012145370162437196,
+      "std": 0.0023309832328114793
+    },
+    {
+      "feature": "provider_entropy",
+      "mean": 0.012096713825885086,
+      "std": 0.003274306183743785
+    },
+    {
+      "feature": "provider_share_providerid_6",
+      "mean": 0.008320233550415357,
+      "std": 0.0020198128325262595
+    },
+    {
+      "feature": "night_share",
+      "mean": 0.007156224268283484,
+      "std": 0.002821298007625126
+    },
+    {
+      "feature": "cat_share_airtime",
+      "mean": 0.007073882775656792,
+      "std": 0.0003256446849937479
+    },
+    {
+      "feature": "pricing_share_4",
+      "mean": 0.005595478703495682,
+      "std": 0.0018057968304537359
+    },
+    {
+      "feature": "cat_share_financial_services",
+      "mean": 0.0049966314843924,
+      "std": 0.003202157545837354
+    },
+    {
+      "feature": "product_entropy",
+      "mean": 0.004592409611497828,
+      "std": 0.001841462806033869
+    },
+    {
+      "feature": "weekend_share",
+      "mean": 0.0023542181300994615,
+      "std": 0.002240318481335158
+    },
+    {
+      "feature": "channel_share_channelid_2",
+      "mean": 0.0017927988621901925,
+      "std": 0.0003156843009799951
+    },
+    {
+      "feature": "cat_share_utility_bill",
+      "mean": 0.001729171345160485,
+      "std": 0.0004165446801691217
+    },
+    {
+      "feature": "channel_entropy",
+      "mean": 0.0010966389699826663,
+      "std": 0.001150177443447518
+    },
+    {
+      "feature": "debit_share",
+      "mean": 0.000726102253162586,
+      "std": 0.0006156186913035112
+    },
+    {
+      "feature": "provider_share_providerid_4",
+      "mean": 0.0004491354143273174,
+      "std": 0.0008595400498092847
+    },
+    {
+      "feature": "cat_share_residual",
+      "mean": 0.0002245677071636365,
+      "std": 0.00017753636088975436
+    },
+    {
+      "feature": "cat_share_tv",
+      "mean": 0.00016842578037266077,
+      "std": 0.00014592101721400377
+    },
+    {
+      "feature": "channel_share_residual",
+      "mean": 4.117074631324602e-05,
+      "std": 5.076974311794043e-05
+    },
+    {
+      "feature": "provider_share_residual",
+      "mean": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "pricing_share_residual",
+      "mean": -1.871397559707333e-05,
+      "std": 0.0002770679769941596
+    },
+    {
+      "feature": "pricing_share_1",
+      "mean": -0.00017965416573104687,
+      "std": 0.0001961310353555595
+    },
+    {
+      "feature": "channel_share_channelid_3",
+      "mean": -0.00098435511640107,
+      "std": 0.0007439223115820695
+    },
+    {
+      "feature": "provider_share_providerid_3",
+      "mean": -0.0010779249943859038,
+      "std": 0.00018205534107362987
+    },
+    {
+      "feature": "cat_share_data_bundles",
+      "mean": -0.0011003817651022763,
+      "std": 0.0004907773549863242
+    },
+    {
+      "feature": "provider_share_providerid_1",
+      "mean": -0.003918706490006784,
+      "std": 0.0030309153952487004
+    },
+    {
+      "feature": "provider_share_providerid_5",
+      "mean": -0.010782992738977537,
+      "std": 0.0032070185354006525
+    },
+    {
+      "feature": "interval_cv",
+      "mean": -0.029903061606407766,
+      "std": 0.004827220581083558
+    }
+  ]
+}
